@@ -36,28 +36,28 @@ def home():
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
 def shorten_url():
-     long_url = request.form.get('long_url')
-     if not long_url:
-         return "Invalid URL", 400
-     
+    long_url = request.form.get('long_url')
+    if not long_url:
+        return "Invalid URL", 400
 
-     conn = get_db_connection()
-     cursor = conn.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-     
-     # Check if URL exists
-     cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
-     existing_entry = cursor.fetchone()
-     if existing_entry:
+    # Check if URL exists
+    cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
+    existing_entry = cursor.fetchone()
+    if existing_entry:
         conn.close()
-        return f"Shortened URL: <a href='{request.host_url}{existing_entry['short_url']}'>{request.host_url}{existing_entry['short_url']}</a>"
-        #return f"Shortened URL: <a href='{request.host_url}{existing_entry['short_url']}'>https://de/{existing_entry['short_url']}</a>"
+        short_url = f"{request.host_url}{existing_entry['short_url']}"
+        return render_template('shortened.html', short_url=short_url)
 
-     short_url = generate_short_url(long_url)
-     cursor.execute("INSERT INTO url_mapping (long_url,short_url) VALUES (%s, %s)", (long_url, short_url))
-     conn.commit()
-     conn.close()
-     return f"Shortened URL: <a href='{request.host_url}{short_url}'>{request.host_url}{short_url}</a>"
+    short_url = generate_short_url(long_url)
+    cursor.execute("INSERT INTO url_mapping (long_url, short_url) VALUES (%s, %s)", (long_url, short_url))
+    conn.commit()
+    conn.close()
+
+    short_url = f"{request.host_url}{short_url}"
+    return render_template('shortened.html', short_url=short_url)
 
 
 # Redirect shortened URLs
