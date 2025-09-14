@@ -33,6 +33,9 @@ def home():
 
 
 
+# Define your custom shortened host URL
+CUSTOM_HOST_URL = "https://short.ly/"
+
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
 def shorten_url():
@@ -48,7 +51,8 @@ def shorten_url():
     existing_entry = cursor.fetchone()
     if existing_entry:
         conn.close()
-        short_url = f"{request.host_url}{existing_entry['short_url']}"
+        # Use CUSTOM_HOST_URL instead of request.host_url
+        short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
         return render_template('shortened.html', short_url=short_url)
 
     short_url = generate_short_url(long_url)
@@ -56,7 +60,8 @@ def shorten_url():
     conn.commit()
     conn.close()
 
-    short_url = f"{request.host_url}{short_url}"
+    # Use CUSTOM_HOST_URL instead of request.host_url
+    short_url = f"{CUSTOM_HOST_URL}{short_url}"
     return render_template('shortened.html', short_url=short_url)
 
 
