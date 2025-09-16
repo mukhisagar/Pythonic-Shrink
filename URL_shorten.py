@@ -34,7 +34,7 @@ def home():
 
 
 # Define your custom shortened host URL
-CUSTOM_HOST_URL = "https://short.ly/"
+CUSTOM_HOST_URL = "https://PyShrink.com/"
 
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
