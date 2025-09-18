@@ -13,21 +13,42 @@
         }
 
         body {
-            background: linear-gradient(135deg, #4CAF50, #81C784);
+            background: #121212;
             color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden;
+        }
+
+        /* Moving Gradient Background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, #4CAF50, #81C784, #1E88E5, #673AB7);
+            background-size: 400% 400%;
+            animation: gradientMove 10s infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
             text-align: center;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(0, 0, 0, 0.8);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
             max-width: 500px;
             width: 90%;
         }
@@ -40,7 +61,7 @@
 
         p {
             font-size: 1rem;
-            color: #555;
+            color: #ccc;
             margin-bottom: 30px;
         }
 
@@ -52,15 +73,17 @@
 
         label {
             font-size: 1rem;
-            color: #333;
+            color: #ccc;
         }
 
         input[type="text"] {
             padding: 12px;
             font-size: 1rem;
-            border: 1px solid #ccc;
+            border: 1px solid #333;
             border-radius: 5px;
             outline: none;
+            background: #222;
+            color: #fff;
             transition: border-color 0.3s;
         }
 
@@ -109,7 +132,7 @@
             <button type="submit">Shrink URL</button>
         </form>
         <footer>
-            <p>Made with ❤️ by <a href="https://www.linkedin.com/in/your-profile" target="_blank">Sagar Mukhi</a></p>
+            <p>Made with ❤️ by <a href="https://www.linkedin.com/in/sagarmukhi" target="_blank">Sagar Mukhi</a></p>
         </footer>
     </div>
 </body>
