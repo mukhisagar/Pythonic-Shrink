@@ -1,23 +1,26 @@
 from flask import Flask, request, redirect, jsonify,render_template
-import mysql.connector
+import psycopg2
+import os
 import hashlib
 import base64
 
 app = Flask(__name__)
 
 # Database Configuration
-
-DB_CONFIG = {
-     'host': 'localhost',
-     'user': 'root',
-     'password': 'root',
-     'database': 'test'
-}
-
-
-
+# Function to get the database connection
 def get_db_connection():
-     return mysql.connector.connect(**DB_CONFIG)
+    # 1. Retrieve the connection string from the OS environment.
+    # We use DB_CONFIG as the environment variable name, as you specified.
+    DB_CONFIG_URL = os.environ.get('DB_CONFIG') 
+
+    # 2. Check if the URL was found and then connect to the Postgres database.
+    if DB_CONFIG_URL:
+        # psycopg2.connect() accepts the full connection string as an argument.
+        return psycopg2.connect(DB_CONFIG_URL) 
+    else:
+        # This block is for safety; it will prevent the app from crashing 
+        # locally if the environment variable isn't set.
+        raise Exception("DB_CONFIG environment variable not set. Cannot connect to database.")
 
 
 # Function to generate a short URL
