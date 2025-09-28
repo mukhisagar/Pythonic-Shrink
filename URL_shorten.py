@@ -3,6 +3,7 @@ import psycopg2
 import os
 import hashlib
 import base64
+from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
 
@@ -47,14 +48,13 @@ def shorten_url():
         return "Invalid URL", 400
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=DictCursor)  # Use DictCursor here
 
     # Check if URL exists
     cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
     existing_entry = cursor.fetchone()
     if existing_entry:
         conn.close()
-        # Use CUSTOM_HOST_URL instead of request.host_url
         short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
         return render_template('shortened.html', short_url=short_url)
 
@@ -63,7 +63,6 @@ def shorten_url():
     conn.commit()
     conn.close()
 
-    # Use CUSTOM_HOST_URL instead of request.host_url
     short_url = f"{CUSTOM_HOST_URL}{short_url}"
     return render_template('shortened.html', short_url=short_url)
 
@@ -72,7 +71,7 @@ def shorten_url():
 @app.route('/<short_url>', methods=['GET'])
 def redirect_url(short_url):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=DictCursor)  # Use DictCursor here
     cursor.execute("SELECT long_url FROM url_mapping WHERE short_url = %s", (short_url,))
     entry = cursor.fetchone()
     if entry:
