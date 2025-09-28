@@ -6,63 +6,42 @@
     <title>Pythonic-Shrink</title>
     <style>
         /* General Reset */
-        body, h1, h2, p {
+        body, h1, p {
             margin: 0;
             padding: 0;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
         }
 
         body {
-            background: #121212;
-            color: #fff;
+            background-color: #f9f9f9;
+            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
-        }
-
-        /* Moving Gradient Background */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, #4CAF50, #81C784, #1E88E5, #673AB7);
-            background-size: 400% 400%;
-            animation: gradientMove 10s infinite;
-            z-index: -1;
-        }
-
-        @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
 
         .container {
             text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
             width: 90%;
         }
 
-        h2 {
+        h1 {
             color: #4CAF50;
             margin-bottom: 20px;
-            font-size: 2rem;
+            font-size: 1.8rem;
         }
 
         p {
             font-size: 1rem;
-            color: #ccc;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            color: #555;
         }
 
         form {
@@ -71,19 +50,12 @@
             gap: 15px;
         }
 
-        label {
-            font-size: 1rem;
-            color: #ccc;
-        }
-
         input[type="text"] {
-            padding: 12px;
+            padding: 10px;
             font-size: 1rem;
-            border: 1px solid #333;
+            border: 1px solid #ccc;
             border-radius: 5px;
             outline: none;
-            background: #222;
-            color: #fff;
             transition: border-color 0.3s;
         }
 
@@ -92,7 +64,7 @@
         }
 
         button {
-            padding: 12px;
+            padding: 10px;
             font-size: 1rem;
             color: #fff;
             background-color: #4CAF50;
@@ -111,28 +83,18 @@
             font-size: 0.9rem;
             color: #777;
         }
-
-        footer a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Welcome to Pythonic-Shrink</h2>
-        <p>Simplify your URLs with ease. Enter your long URL below to get started!</p>
+        <h1>Pythonic-Shrink</h1>
+        <p>Enter a long URL to shorten it:</p>
         <form method="post" action="/shorten">
-            <label for="long_url">Enter the URL to shrink:</label>
             <input type="text" id="long_url" name="long_url" placeholder="https://example.com" required>
-            <button type="submit">Shrink URL</button>
+            <button type="submit">Shorten URL</button>
         </form>
         <footer>
-            <p>Made with ❤️ by <a href="https://www.linkedin.com/in/sagarmukhi" target="_blank">Sagar Mukhi</a></p>
+            <p>Made with ❤️ by Your Name</p>
         </footer>
     </div>
 </body>
