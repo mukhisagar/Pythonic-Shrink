@@ -38,7 +38,7 @@ def home():
 
 
 # Define your custom shortened host URL
-CUSTOM_HOST_URL = "https://PyShrink.com/"
+CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
 
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
@@ -47,24 +47,30 @@ def shorten_url():
     if not long_url:
         return "Invalid URL", 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=DictCursor)  # Use DictCursor here
+    if not long_url.startswith(('http://', 'https://')):
+        long_url = 'http://' + long_url
 
-    # Check if URL exists
-    cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
-    existing_entry = cursor.fetchone()
-    if existing_entry:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=DictCursor)  # Use DictCursor here
+
+        # Check if URL exists
+        cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
+        existing_entry = cursor.fetchone()
+        if existing_entry:
+            conn.close()
+            short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
+            return render_template('shortened.html', short_url=short_url)
+
+        short_url = generate_short_url(long_url)
+        cursor.execute("INSERT INTO url_mapping (long_url, short_url) VALUES (%s, %s)", (long_url, short_url))
+        conn.commit()
         conn.close()
-        short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
+
+        short_url = f"{CUSTOM_HOST_URL}{short_url}"
         return render_template('shortened.html', short_url=short_url)
-
-    short_url = generate_short_url(long_url)
-    cursor.execute("INSERT INTO url_mapping (long_url, short_url) VALUES (%s, %s)", (long_url, short_url))
-    conn.commit()
-    conn.close()
-
-    short_url = f"{CUSTOM_HOST_URL}{short_url}"
-    return render_template('shortened.html', short_url=short_url)
+    except Exception as e:
+        return f"Database error: {e}", 500
 
 
 # Redirect shortened URLs
