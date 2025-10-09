@@ -81,13 +81,38 @@ def redirect_url(short_url):
     cursor.execute("SELECT long_url FROM url_mapping WHERE short_url = %s", (short_url,))
     entry = cursor.fetchone()
     if entry:
-        cursor.execute("UPDATE url_mapping SET clicks = clicks + 1 WHERE short_url = %s", (short_url,))
+        # Update the clicks and last_accessed columns
+        cursor.execute(
+            "UPDATE url_mapping SET clicks = clicks + 1, last_accessed = CURRENT_TIMESTAMP WHERE short_url = %s",
+            (short_url,)
+        )
         conn.commit()
         conn.close()
         return redirect(entry['long_url'])
     
     conn.close()
     return "Error: URL not found", 404
+
+@app.route('/analytics/<short_url>', methods=['GET'])
+def analytics(short_url):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=DictCursor)
+
+        # Fetch analytics data for the given short URL
+        cursor.execute(
+            "SELECT long_url, clicks, created_at, last_accessed FROM url_mapping WHERE short_url = %s",
+            (short_url,)
+        )
+        entry = cursor.fetchone()
+        conn.close()
+
+        if entry:
+            return render_template('analytics.html', data=entry)
+        else:
+            return "Error: URL not found", 404
+    except Exception as e:
+        return f"Database error: {e}", 500
 # Run the Flask application
 if __name__ == '__main__':
      app.run(debug=True)
