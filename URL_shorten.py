@@ -38,12 +38,14 @@ def home():
 
 
 # Define your custom shortened host URL
-CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
+CUSTOM_HOST_URL = "https://Pyshrink.ly"
 
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
 def shorten_url():
     long_url = request.form.get('long_url')
+    expiration_date = request.form.get('expiration_date')  # Get expiration date from the form
+
     if not long_url:
         return "Invalid URL", 400
 
@@ -52,7 +54,7 @@ def shorten_url():
 
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=DictCursor)  # Use DictCursor here
+        cursor = conn.cursor(cursor_factory=DictCursor)
 
         # Check if URL exists
         cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
@@ -62,8 +64,19 @@ def shorten_url():
             short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
             return render_template('shortened.html', short_url=short_url)
 
+        # Generate short URL
         short_url = generate_short_url(long_url)
-        cursor.execute("INSERT INTO url_mapping (long_url, short_url) VALUES (%s, %s)", (long_url, short_url))
+
+        # Set default expiration date if not provided
+        if not expiration_date:
+            cursor.execute("SELECT CURRENT_TIMESTAMP + INTERVAL '30 days' AS default_expiration")
+            expiration_date = cursor.fetchone()['default_expiration']
+
+        # Insert the new URL into the database
+        cursor.execute(
+            "INSERT INTO url_mapping (long_url, short_url, expiration_date) VALUES (%s, %s, %s)",
+            (long_url, short_url, expiration_date)
+        )
         conn.commit()
         conn.close()
 
@@ -77,10 +90,19 @@ def shorten_url():
 @app.route('/<short_url>', methods=['GET'])
 def redirect_url(short_url):
     conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=DictCursor)  # Use DictCursor here
-    cursor.execute("SELECT long_url FROM url_mapping WHERE short_url = %s", (short_url,))
+    cursor = conn.cursor(cursor_factory=DictCursor)
+
+    # Check if the URL exists and is not expired
+    cursor.execute(
+        "SELECT long_url, expiration_date FROM url_mapping WHERE short_url = %s",
+        (short_url,)
+    )
     entry = cursor.fetchone()
     if entry:
+        if entry['expiration_date'] and entry['expiration_date'] < cursor.execute("SELECT CURRENT_TIMESTAMP"):
+            conn.close()
+            return "Error: This shortened URL has expired.", 410  # HTTP 410 Gone
+
         # Update the clicks and last_accessed columns
         cursor.execute(
             "UPDATE url_mapping SET clicks = clicks + 1, last_accessed = CURRENT_TIMESTAMP WHERE short_url = %s",
@@ -89,7 +111,7 @@ def redirect_url(short_url):
         conn.commit()
         conn.close()
         return redirect(entry['long_url'])
-    
+
     conn.close()
     return "Error: URL not found", 404
 

@@ -50,7 +50,7 @@
             gap: 15px;
         }
 
-        input[type="text"] {
+        input[type="text"], input[type="date"] {
             padding: 10px;
             font-size: 1rem;
             border: 1px solid #ccc;
@@ -59,7 +59,7 @@
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus, input[type="date"]:focus {
             border-color: #4CAF50;
         }
 
@@ -83,6 +83,12 @@
             font-size: 0.9rem;
             color: #777;
         }
+
+        label {
+            font-size: 0.9rem;
+            color: #333;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -90,7 +96,12 @@
         <h1>Pythonic-Shrink</h1>
         <p>Enter a long URL to shorten it:</p>
         <form method="post" action="/shorten">
+            <label for="long_url">Enter the URL to shrink:</label>
             <input type="text" id="long_url" name="long_url" placeholder="https://example.com" required>
+            
+            <label for="expiration_date">Set Expiration Date (optional):</label>
+            <input type="date" id="expiration_date" name="expiration_date">
+            
             <button type="submit">Shorten URL</button>
         </form>
         <footer>
