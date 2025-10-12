@@ -38,7 +38,7 @@ def home():
 
 
 # Define your custom shortened host URL
-CUSTOM_HOST_URL = "https://Pyshrink.ly"
+CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
 
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
