@@ -3,6 +3,7 @@ import psycopg2
 import os
 import hashlib
 import base64
+import re
 from psycopg2.extras import DictCursor
 
 app = Flask(__name__)
@@ -44,6 +45,7 @@ CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
 @app.route('/shorten', methods=['POST'])
 def shorten_url():
     long_url = request.form.get('long_url')
+    custom_short_url = request.form.get('custom_short_url')  # Get custom short URL from the form
     expiration_date = request.form.get('expiration_date')  # Get expiration date from the form
 
     if not long_url:
@@ -56,16 +58,32 @@ def shorten_url():
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=DictCursor)
 
-        # Check if URL exists
-        cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
-        existing_entry = cursor.fetchone()
-        if existing_entry:
-            conn.close()
-            short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
-            return render_template('shortened.html', short_url=short_url)
+        # Check if a custom short URL is provided
+        if custom_short_url:
+            # Ensure the custom short URL is unique
+            cursor.execute("SELECT * FROM url_mapping WHERE short_url = %s", (custom_short_url,))
+            existing_custom_entry = cursor.fetchone()
+            if existing_custom_entry:
+                conn.close()
+                return "Error: Custom short URL already exists. Please choose another one.", 400
 
-        # Generate short URL
-        short_url = generate_short_url(long_url)
+            # Validate custom short URL
+            if not re.match("^[a-zA-Z0-9_-]+$", custom_short_url):
+                return "Error: Custom short URL contains invalid characters. Only letters, numbers, dashes, and underscores are allowed.", 400
+            if len(custom_short_url) > 20:
+                return "Error: Custom short URL is too long. Maximum length is 20 characters.", 400
+
+            short_url = custom_short_url
+        else:
+            # Generate a short URL if no custom short URL is provided
+            cursor.execute("SELECT short_url FROM url_mapping WHERE long_url = %s", (long_url,))
+            existing_entry = cursor.fetchone()
+            if existing_entry:
+                conn.close()
+                short_url = f"{CUSTOM_HOST_URL}{existing_entry['short_url']}"
+                return render_template('shortened.html', short_url=short_url)
+
+            short_url = generate_short_url(long_url)
 
         # Set default expiration date if not provided
         if not expiration_date:
