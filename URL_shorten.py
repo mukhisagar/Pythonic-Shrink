@@ -1,10 +1,12 @@
-from flask import Flask, request, redirect, jsonify,render_template
+from flask import Flask, request, redirect, jsonify, render_template
 import psycopg2
 import os
 import hashlib
 import base64
 import re
 from psycopg2.extras import DictCursor
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -36,14 +38,14 @@ def generate_short_url(long_url):
 def home():
      return render_template('index.html')
 
-
-
 # Define your custom shortened host URL
 CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
 
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
+@login_required
 def shorten_url():
+    # Use current_user.id to associate the shortened URL with the logged-in user
     long_url = request.form.get('long_url')
     custom_short_url = request.form.get('custom_short_url')  # Get custom short URL from the form
     expiration_date = request.form.get('expiration_date')  # Get expiration date from the form
@@ -90,10 +92,10 @@ def shorten_url():
             cursor.execute("SELECT CURRENT_TIMESTAMP + INTERVAL '30 days' AS default_expiration")
             expiration_date = cursor.fetchone()['default_expiration']
 
-        # Insert the new URL into the database
+        # Insert the new URL into the database with the user_id
         cursor.execute(
-            "INSERT INTO url_mapping (long_url, short_url, expiration_date) VALUES (%s, %s, %s)",
-            (long_url, short_url, expiration_date)
+            "INSERT INTO url_mapping (long_url, short_url, expiration_date, user_id) VALUES (%s, %s, %s, %s)",
+            (long_url, short_url, expiration_date, current_user.id)
         )
         conn.commit()
         conn.close()
@@ -153,6 +155,76 @@ def analytics(short_url):
             return "Error: URL not found", 404
     except Exception as e:
         return f"Database error: {e}", 500
+
 # Run the Flask application
 if __name__ == '__main__':
      app.run(debug=True)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class User(UserMixin):
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=DictCursor)
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+    if user:
+        return User(id=user['id'], username=user['username'])
+    return None
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Hash the password
+        password_hash = generate_password_hash(password)
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
+            conn.commit()
+            conn.close()
+            return "Registration successful! Please log in."
+        except Exception as e:
+            return f"Error: {e}", 500
+
+    return render_template('register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user and check_password_hash(user['password_hash'], password):
+            login_user(User(id=user['id'], username=user['username']))
+            return "Login successful!"
+        else:
+            return "Invalid username or password."
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return "You have been logged out."
