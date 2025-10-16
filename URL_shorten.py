@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, jsonify, render_template
+from flask import Flask, request, redirect, jsonify, render_template, session, url_for
 import psycopg2
 import os
 import hashlib
@@ -7,6 +7,7 @@ import re
 from psycopg2.extras import DictCursor
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -45,7 +46,7 @@ CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
 @app.route('/shorten', methods=['POST'])
 @login_required
 def shorten_url():
-    # Use current_user.id to associate the shortened URL with the logged-in user
+    # Use session['user_id'] to associate the shortened URL with the logged-in user
     long_url = request.form.get('long_url')
     custom_short_url = request.form.get('custom_short_url')  # Get custom short URL from the form
     expiration_date = request.form.get('expiration_date')  # Get expiration date from the form
@@ -224,7 +225,14 @@ def login():
 
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
+    session.clear()  # Clear the session
     return "You have been logged out."
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
