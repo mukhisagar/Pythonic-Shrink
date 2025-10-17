@@ -1,4 +1,5 @@
 from flask import Flask, request, redirect, jsonify, render_template, session, url_for
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import psycopg2
 import os
 import hashlib
@@ -10,6 +11,32 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Required for session management
+
+
+# Run the Flask application
+if __name__ == '__main__':
+     app.run(debug=True)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class User(UserMixin):
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=DictCursor)
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+    if user:
+        return User(id=user['id'], username=user['username'])
+    return None
 
 # Database Configuration
 # Function to get the database connection
@@ -156,30 +183,6 @@ def analytics(short_url):
             return "Error: URL not found", 404
     except Exception as e:
         return f"Database error: {e}", 500
-
-# Run the Flask application
-if __name__ == '__main__':
-     app.run(debug=True)
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-class User(UserMixin):
-    def __init__(self, id, username):
-        self.id = id
-        self.username = username
-
-@login_manager.user_loader
-def load_user(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=DictCursor)
-    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-    user = cursor.fetchone()
-    conn.close()
-    if user:
-        return User(id=user['id'], username=user['username'])
-    return None
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
