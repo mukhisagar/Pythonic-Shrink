@@ -208,6 +208,17 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Check if there are any users in the database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM users")
+    user_count = cursor.fetchone()[0]
+    conn.close()
+
+    # If no users exist, redirect to the register page
+    if user_count == 0:
+        return redirect(url_for('register'))
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
