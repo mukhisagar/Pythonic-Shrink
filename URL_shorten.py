@@ -190,6 +190,12 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
 
+        # Validate username and password
+        if not re.match("^[a-zA-Z0-9_]+$", username):
+            return "Error: Username can only contain letters, numbers, and underscores.", 400
+        if len(password) < 8 or not re.search(r'[A-Z]', password) or not re.search(r'[a-z]', password) or not re.search(r'[0-9]', password):
+            return "Error: Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.", 400
+
         # Hash the password
         password_hash = generate_password_hash(password)
 
@@ -199,7 +205,7 @@ def register():
             cursor.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
             conn.commit()
             conn.close()
-            return "Registration successful! Please log in."
+            return render_template('register_success.html')  # Redirect to a success page
         except Exception as e:
             return f"Error: {e}", 500
 
@@ -231,7 +237,7 @@ def login():
 
         if user and check_password_hash(user['password_hash'], password):
             login_user(User(id=user['id'], username=user['username']))
-            return "Login successful!"
+            return redirect(url_for('home'))  # Redirect to the homepage
         else:
             return "Invalid username or password."
 
