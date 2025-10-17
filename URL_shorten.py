@@ -14,9 +14,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
 
 
-# Run the Flask application
-if __name__ == '__main__':
-     app.run(debug=True)
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -64,7 +62,7 @@ def generate_short_url(long_url):
 # Serve the HTML form
 @app.route('/')
 def home():
-     return render_template('index.html')
+     return render_template('login.html')
 
 # Define your custom shortened host URL
 CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
@@ -256,3 +254,6 @@ def login_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
+# Run the Flask application
+if __name__ == '__main__':
+     app.run(debug=True)
