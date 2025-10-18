@@ -39,13 +39,23 @@
     </style>
 </head>
 <body>
+    {% extends "base.html" %}
+    {% block title %}Analytics - Pythonic Shrink{% endblock %}
+    {% block content %}
     <div class="container">
-        <h1>Analytics for Shortened URL</h1>
-        <p><strong>Original URL:</strong> <a href="{{ data.long_url }}" target="_blank">{{ data.long_url }}</a></p>
-        <p><strong>Clicks:</strong> {{ data.clicks }}</p>
-        <p><strong>Created At:</strong> {{ data.created_at }}</p>
-        <p><strong>Last Accessed:</strong> {{ data.last_accessed }}</p>
-        <a href="/">Go Back</a>
+        <h2>URL Analytics</h2>
+        {% if data %}
+        <ul class="list-group mb-3">
+            <li class="list-group-item"><strong>Long URL:</strong> <a href="{{ data.long_url }}" target="_blank">{{ data.long_url }}</a></li>
+            <li class="list-group-item"><strong>Clicks:</strong> {{ data.clicks }}</li>
+            <li class="list-group-item"><strong>Created At:</strong> {{ data.created_at }}</li>
+            <li class="list-group-item"><strong>Last Accessed:</strong> {{ data.last_accessed or 'Never' }}</li>
+        </ul>
+        {% else %}
+        <div class="alert alert-warning">No analytics data found for this URL.</div>
+        {% endif %}
+        <a href="{{ url_for('home') }}" class="btn btn-secondary w-100">Back to Home</a>
     </div>
+    {% endblock %}
 </body>
 </html>

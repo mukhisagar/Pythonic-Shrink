@@ -204,7 +204,7 @@ def register():
             cursor.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
             conn.commit()
             conn.close()
-            return render_template('register_success.html')  # Redirect to a success page
+            return redirect(url_for('login'))  # Redirect to the login page after successful registration
         except Exception as e:
             return f"Error: {e}", 500
 
@@ -244,17 +244,12 @@ def login():
 
 
 @app.route('/logout')
+@login_required
 def logout():
-    session.clear()  # Clear the session
+    logout_user()  # Use Flask-Login's logout
     return "You have been logged out."
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+
 # Run the Flask application
 if __name__ == '__main__':
      app.run(debug=True)
