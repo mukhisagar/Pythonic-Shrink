@@ -61,8 +61,9 @@ def generate_short_url(long_url):
 
 # Serve the HTML form
 @app.route('/')
+@login_required
 def home():
-     return render_template('login.html')
+     return render_template('index.html')
 
 # Define your custom shortened host URL
 CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
