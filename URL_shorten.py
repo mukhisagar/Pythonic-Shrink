@@ -249,6 +249,21 @@ def logout():
     logout_user()  # Use Flask-Login's logout
     return "You have been logged out."
 
+@app.route('/preview/<short_url>', methods=['GET'])
+def preview_url(short_url):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=DictCursor)
+    cursor.execute(
+        "SELECT long_url, expiration_date FROM url_mapping WHERE short_url = %s",
+        (short_url,)
+    )
+    entry = cursor.fetchone()
+    conn.close()
+    if entry:
+        # Check expiration
+        # (You may want to check expiration here as in your redirect logic)
+        return render_template('preview.html', long_url=entry['long_url'], short_url=short_url)
+    return "Error: URL not found", 404
 
 # Run the Flask application
 if __name__ == '__main__':
