@@ -1,12 +1,16 @@
 from flask import Flask, request, redirect, jsonify, render_template, session, url_for
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import psycopg2
+from psycopg2.extras import DictCursor
 import os
 import re
 import socket
 import ipaddress
+import hashlib
+import base64
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 
 try:
     import requests
