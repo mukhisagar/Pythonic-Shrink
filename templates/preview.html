@@ -12,12 +12,11 @@
             <button class="btn btn-primary w-100" type="submit">Proceed to Site</button>
         </form>
         <div class="mt-3 text-center">
-            <a href="{{ url_for('home') }}" class="btn btn-secondary w-100">Cancel</a>
+            <a href="{{ url_for('analytics', short_url=short_url) }}" class="btn btn-secondary w-100">View Analytics</a>
+        </div>
+        <div class="mt-3 text-center">
+            <a href="{{ url_for('home') }}" class="btn btn-light w-100">Cancel</a>
         </div>
     </div>
 </div>
-<p>
-    <a href="{{ short_url }}">Go to Short URL</a> |
-    <a href="{{ url_for('preview_url', short_url=short_url.split('/')[-1]) }}">Preview Destination</a>
-</p>
 {% endblock %}
