@@ -363,6 +363,98 @@ def preview_url(short_url):
         return render_template('preview.html', long_url=entry['long_url'], short_url=short_url)
     return "Error: URL not found", 404
 
+@app.route('/api/shorten', methods=['POST'])
+def api_shorten():
+    """
+    JSON API: POST /api/shorten
+    Body: { "long_url": "...", "custom_short_url": "...", "expiration_date": "YYYY-MM-DD" }
+    Auth: either logged-in user (Flask-Login) OR header X-API-KEY matching env API_KEY.
+    Response: JSON { "short_url": "...", "full_short_url": "https://...", "created": "iso" }
+    """
+    data = request.get_json(silent=True) or {}
+    long_url = (data.get('long_url') or '').strip()
+    custom_short_url = (data.get('custom_short_url') or '').strip()
+    expiration_date = data.get('expiration_date')  # optional ISO date string
+
+    # authentication: prefer logged-in user, else API key
+    if current_user and getattr(current_user, 'is_authenticated', False):
+        user_id = current_user.id
+    else:
+        api_key = request.headers.get('X-API-KEY')
+        if not api_key or api_key != os.environ.get('API_KEY'):
+            return jsonify({"error": "Authentication required: login or provide X-API-KEY"}), 401
+        try:
+            user_id = int(os.environ.get('API_USER_ID', 0))
+        except Exception:
+            user_id = 0
+
+    # rate limit
+    allowed, msg = can_shorten(user_id)
+    if not allowed:
+        return jsonify({"error": msg}), 429
+
+    # validate URL
+    ok, reason = is_valid_url(long_url)
+    if not ok:
+        return jsonify({"error": f"Invalid URL: {reason}"}), 400
+
+    # validate custom alias
+    conn = None
+    try:
+        if custom_short_url:
+            if not re.match(r'^[A-Za-z0-9_-]{3,40}$', custom_short_url):
+                return jsonify({"error": "Custom alias may contain only letters, numbers, - and _. (3-40 chars)"}), 400
+            conn = get_db_connection()
+            cur = conn.cursor(cursor_factory=DictCursor)
+            cur.execute("SELECT 1 FROM url_mapping WHERE short_url = %s", (custom_short_url,))
+            if cur.fetchone():
+                return jsonify({"error": "Custom short URL already in use"}), 409
+            short_url = custom_short_url
+        else:
+            short_url = None
+            attempts = 0
+            while attempts < 5 and not short_url:
+                candidate = generate_short_url(long_url + str(datetime.utcnow().timestamp()) + os.urandom(4).hex())
+                candidate = candidate[:8]
+                conn = get_db_connection()
+                cur = conn.cursor(cursor_factory=DictCursor)
+                cur.execute("SELECT 1 FROM url_mapping WHERE short_url = %s", (candidate,))
+                if not cur.fetchone():
+                    short_url = candidate
+                conn.close()
+                attempts += 1
+            if not short_url:
+                return jsonify({"error": "Could not generate a unique short URL, try again"}), 500
+
+        # persist mapping
+        conn = get_db_connection()
+        cur = conn.cursor()
+        if expiration_date:
+            cur.execute(
+                "INSERT INTO url_mapping (short_url, long_url, user_id, expiration_date, created_at) VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)",
+                (short_url, long_url, user_id, expiration_date)
+            )
+        else:
+            cur.execute(
+                "INSERT INTO url_mapping (short_url, long_url, user_id, created_at) VALUES (%s, %s, %s, CURRENT_TIMESTAMP)",
+                (short_url, long_url, user_id)
+            )
+        conn.commit()
+        full_short = CUSTOM_HOST_URL.rstrip('/') + '/' + short_url
+        return jsonify({
+            "short_url": short_url,
+            "full_short_url": full_short,
+            "long_url": long_url,
+            "created": datetime.utcnow().isoformat() + "Z"
+        }), 201
+    except Exception as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
+    finally:
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass
 # Run the Flask application
 if __name__ == '__main__':
      app.run(debug=True)
