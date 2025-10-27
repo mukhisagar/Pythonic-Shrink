@@ -344,7 +344,8 @@ def login():
 @login_required
 def logout():
     logout_user()  # Use Flask-Login's logout
-    return "You have been logged out."
+    # show a friendly page with a button to log back in
+    return render_template('logout.html')
 
 @app.route('/preview/<short_url>', methods=['GET'])
 def preview_url(short_url):
