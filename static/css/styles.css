@@ -1,0 +1,50 @@
+/* General Reset */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f8fafc;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 400px;
+    margin: 60px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 2rem 2.5rem;
+}
+
+h2 {
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.navbar {
+    background: #3b82f6;
+}
+
+.navbar-brand, .nav-link, .navbar-text {
+    color: #fff !important;
+}
+
+.footer {
+    text-align: center;
+    color: #aaa;
+    margin-top: 2rem;
+    font-size: 0.95em;
+}

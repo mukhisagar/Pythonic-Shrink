@@ -1,61 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics for Shortened URL</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 90%;
-        }
-        h1 {
-            color: #4CAF50;
-            margin-bottom: 20px;
-        }
-        p {
-            font-size: 1rem;
-            margin: 10px 0;
-        }
-        a {
-            color: #1E88E5;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    {% extends "base.html" %}
-    {% block title %}Analytics - Pythonic Shrink{% endblock %}
-    {% block content %}
-    <div class="container">
-        <h2>URL Analytics</h2>
-        {% if data %}
-        <ul class="list-group mb-3">
-            <li class="list-group-item"><strong>Long URL:</strong> <a href="{{ data.long_url }}" target="_blank">{{ data.long_url }}</a></li>
-            <li class="list-group-item"><strong>Clicks:</strong> {{ data.clicks }}</li>
-            <li class="list-group-item"><strong>Created At:</strong> {{ data.created_at }}</li>
-            <li class="list-group-item"><strong>Last Accessed:</strong> {{ data.last_accessed or 'Never' }}</li>
-        </ul>
-        {% else %}
-        <div class="alert alert-warning">No analytics data found for this URL.</div>
-        {% endif %}
-        <a href="{{ url_for('home') }}" class="btn btn-secondary w-100">Back to Home</a>
-    </div>
-    {% endblock %}
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Analytics - Pythonic Shrink{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>URL Analytics</h2>
+    {% if data %}
+    <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>Long URL:</strong> <a href="{{ data.long_url }}" target="_blank">{{ data.long_url }}</a></li>
+        <li class="list-group-item"><strong>Clicks:</strong> {{ data.clicks }}</li>
+        <li class="list-group-item"><strong>Created At:</strong> {{ data.created_at }}</li>
+        <li class="list-group-item"><strong>Last Accessed:</strong> {{ data.last_accessed or 'Never' }}</li>
+    </ul>
+    {% else %}
+    <div class="alert alert-warning">No analytics data found for this URL.</div>
+    {% endif %}
+    <a href="{{ url_for('home') }}" class="btn btn-secondary w-100">Back to Home</a>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 from flask import Flask, request, redirect, jsonify, render_template, session, url_for
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import psycopg2
+from psycopg2 import pool
 from psycopg2.extras import DictCursor
 import os
 import re
@@ -11,6 +12,7 @@ import base64
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from contextlib import contextmanager
 
 try:
     import requests
@@ -100,11 +102,31 @@ def can_shorten(user_id):
         # On DB error, deny to be safe (or alternatively allow)
         return False, "Rate limit check failed; try again later"
 
+# Configuration - load from environment
+class Config:
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-please-change")
+    DB_DSN = os.environ.get("DB_CONFIG")  # e.g. postgres://user:pass@host:5432/dbname
+    CUSTOM_HOST_URL = os.environ.get("CUSTOM_HOST_URL", "https://pythonic-shrink.onrender.com/")
+    API_KEY = os.environ.get("API_KEY", "")
+
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session management
+app.config.from_object(Config)
 
+# init a simple connection pool (optional)
+_db_pool = None
+if app.config['DB_DSN']:
+    try:
+        _db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, dsn=app.config['DB_DSN'])
+    except Exception:
+        _db_pool = None
 
-
+def get_db_connection():
+    """Return a psycopg2 connection (from pool if available). Caller must close."""
+    if _db_pool:
+        return _db_pool.getconn()
+    if app.config['DB_DSN']:
+        return psycopg2.connect(app.config['DB_DSN'])
+    raise RuntimeError("Database not configured. Set DB_CONFIG environment variable.")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -126,23 +148,6 @@ def load_user(user_id):
         return User(id=user['id'], username=user['username'])
     return None
 
-# Database Configuration
-# Function to get the database connection
-def get_db_connection():
-    # 1. Retrieve the connection string from the OS environment.
-    # We use DB_CONFIG as the environment variable name, as you specified.
-    DB_CONFIG_URL = os.environ.get('DB_CONFIG') 
-
-    # 2. Check if the URL was found and then connect to the Postgres database.
-    if DB_CONFIG_URL:
-        # psycopg2.connect() accepts the full connection string as an argument.
-        return psycopg2.connect(DB_CONFIG_URL) 
-    else:
-        # This block is for safety; it will prevent the app from crashing 
-        # locally if the environment variable isn't set.
-        raise Exception("DB_CONFIG environment variable not set. Cannot connect to database.")
-
-
 # Function to generate a short URL
 def generate_short_url(long_url):
      hash_object = hashlib.sha256(long_url.encode())
@@ -154,9 +159,6 @@ def generate_short_url(long_url):
 @login_required
 def home():
      return render_template('index.html')
-
-# Define your custom shortened host URL
-CUSTOM_HOST_URL = "https://pythonic-shrink.onrender.com/"
 
 # Handle URL shortening
 @app.route('/shorten', methods=['POST'])
@@ -224,7 +226,7 @@ def shorten_url():
             )
         conn.commit()
         conn.close()
-        full_short = CUSTOM_HOST_URL.rstrip('/') + '/' + short_url
+        full_short = app.config['CUSTOM_HOST_URL'].rstrip('/') + '/' + short_url
         return render_template('shortened.html', short_url=full_short)
     except Exception as e:
         return render_template('index.html', error=f"Database error: {e}"), 500
@@ -440,7 +442,7 @@ def api_shorten():
                 (short_url, long_url, user_id)
             )
         conn.commit()
-        full_short = CUSTOM_HOST_URL.rstrip('/') + '/' + short_url
+        full_short = app.config['CUSTOM_HOST_URL'].rstrip('/') + '/' + short_url
         return jsonify({
             "short_url": short_url,
             "full_short_url": full_short,
@@ -452,6 +454,26 @@ def api_shorten():
     finally:
         try:
             if conn:
+                conn.close()
+        except Exception:
+            pass
+
+@contextmanager
+def db_cursor(dict_cursor=False):
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor(cursor_factory=DictCursor) if dict_cursor else conn.cursor()
+        yield conn, cur
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        try:
+            if _db_pool:
+                _db_pool.putconn(conn)
+            else:
                 conn.close()
         except Exception:
             pass
