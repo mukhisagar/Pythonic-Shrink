@@ -105,8 +105,8 @@ def can_shorten(user_id):
 # Configuration - load from environment
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-please-change")
-    DB_DSN = os.environ.get("DB_CONFIG")  # e.g. postgres://user:pass@host:5432/dbname
-    CUSTOM_HOST_URL = os.environ.get("CUSTOM_HOST_URL", "https://pythonic-shrink.onrender.com/")
+    DB_DSN = os.environ.get("DB_CONFIG", "postgresql://user:password@localhost:5432/pythonic_shrink")  # Example for local database
+    CUSTOM_HOST_URL = os.environ.get("CUSTOM_HOST_URL", "http://localhost:5000/")
     API_KEY = os.environ.get("API_KEY", "")
 
 app = Flask(__name__)
@@ -117,7 +117,8 @@ _db_pool = None
 if app.config['DB_DSN']:
     try:
         _db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, dsn=app.config['DB_DSN'])
-    except Exception:
+    except Exception as e:
+        print("Error initializing database connection pool:", e)
         _db_pool = None
 
 def get_db_connection():

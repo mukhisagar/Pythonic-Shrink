@@ -1,0 +1,38 @@
+# Deployment Instructions for Pythonic-Shrink
+
+1. **Install Dependencies**:
+   - Install Python 3.9 or higher.
+   - Install PostgreSQL and create a database named `pythonic_shrink`.
+   - Install required Python packages:
+     ```
+     pip install -r requirements.txt
+     ```
+
+2. **Set Environment Variables**:
+   - Copy `.env` file to the root of the project.
+   - Update the values in `.env` as needed.
+
+3. **Run Database Migrations**:
+   - Export the schema from the old database and import it into the new database.
+   - Ensure tables `users` and `url_mapping` exist with the correct structure.
+
+4. **Run the Application**:
+   - Start the Flask app:
+     ```
+     python URL_shorten.py
+     ```
+   - Access the app at `http://localhost:5000/`.
+
+5. **Optional - Use Docker**:
+   - Build and run the app using Docker:
+     ```
+     docker build -t pythonic-shrink .
+     docker run -p 5000:5000 pythonic-shrink
+     ```
+
+6. **Secure the Application**:
+   - Use HTTPS in production.
+   - Update `SECRET_KEY` to a strong, unique value.
+
+7. **Test the Application**:
+   - Test all routes and database operations to ensure everything works as expected.
